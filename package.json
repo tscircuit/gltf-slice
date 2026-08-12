@@ -1,0 +1,54 @@
+{
+  "name": "gltf-slice",
+  "version": "0.0.1",
+  "description": "Slice glTF and GLB meshes into section views with hatched interior caps",
+  "module": "lib/index.ts",
+  "types": "lib/index.ts",
+  "type": "module",
+  "files": ["lib"],
+  "bin": {
+    "gltf-slice": "lib/cli.ts"
+  },
+  "exports": {
+    ".": "./lib/index.ts",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tscircuit/gltf-slice.git"
+  },
+  "homepage": "https://github.com/tscircuit/gltf-slice#readme",
+  "bugs": {
+    "url": "https://github.com/tscircuit/gltf-slice/issues"
+  },
+  "license": "MIT",
+  "keywords": ["gltf", "glb", "slice", "section-view", "3d"],
+  "scripts": {
+    "check": "bun run format:check && bun run typecheck && bun test",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.8",
+    "@tscircuit/alphabet": "^0.0.23",
+    "@types/bun": "^1.3.14",
+    "@types/earcut": "^3.0.0",
+    "gltf-validator": "2.0.0-dev.3.10",
+    "looks-same": "^10.0.1",
+    "poppygl": "^0.0.26"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "^4.4.2",
+    "@gltf-transform/functions": "^4.4.2",
+    "earcut": "^3.0.2",
+    "fast-png": "^8.0.0",
+    "gl-matrix": "^3.4.4"
+  }
+}
