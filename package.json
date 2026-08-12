@@ -1,11 +1,13 @@
 {
   "name": "gltf-slice",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Slice glTF and GLB meshes into section views with hatched interior caps",
   "module": "lib/index.ts",
   "types": "lib/index.ts",
   "type": "module",
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "bin": {
     "gltf-slice": "lib/cli.ts"
   },
@@ -23,7 +25,13 @@
     "url": "https://github.com/tscircuit/gltf-slice/issues"
   },
   "license": "MIT",
-  "keywords": ["gltf", "glb", "slice", "section-view", "3d"],
+  "keywords": [
+    "gltf",
+    "glb",
+    "slice",
+    "section-view",
+    "3d"
+  ],
   "scripts": {
     "check": "bun run format:check && bun run typecheck && bun test",
     "format": "biome format --write .",
