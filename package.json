@@ -1,6 +1,6 @@
 {
   "name": "gltf-slice",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Slice glTF and GLB meshes into section views with hatched interior caps",
   "module": "lib/index.ts",
   "types": "lib/index.ts",
