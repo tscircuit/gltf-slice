@@ -1,8 +1,8 @@
 import {
-  type Buffer as GltfBuffer,
   type Document,
-  Primitive,
+  type Buffer as GltfBuffer,
   type mat4,
+  Primitive,
 } from "@gltf-transform/core"
 import {
   dot,
@@ -185,6 +185,59 @@ function isDegenerateTriangle(
   return dot(normal, normal) <= epsilon ** 4
 }
 
+function isTrianglePrimitiveMode(mode: number): boolean {
+  return (
+    mode === Primitive.Mode.TRIANGLES ||
+    mode === Primitive.Mode.TRIANGLE_STRIP ||
+    mode === Primitive.Mode.TRIANGLE_FAN
+  )
+}
+
+/**
+ * Expand TRIANGLES / TRIANGLE_STRIP / TRIANGLE_FAN into a flat list of
+ * triangle corner vertex indices (groups of 3). Strip winding follows glTF:
+ * odd triangles reverse the first two corners.
+ */
+function listTriangleCornerIndices(
+  mode: number,
+  indexCount: number,
+  getIndex: (index: number) => number,
+): number[] {
+  if (mode === Primitive.Mode.TRIANGLES) {
+    const corners: number[] = []
+    for (let index = 0; index < indexCount; index += 1) {
+      corners.push(getIndex(index))
+    }
+    return corners
+  }
+
+  if (mode === Primitive.Mode.TRIANGLE_STRIP) {
+    const corners: number[] = []
+    for (let index = 0; index < indexCount - 2; index += 1) {
+      const a = getIndex(index)
+      const b = getIndex(index + 1)
+      const c = getIndex(index + 2)
+      if (index % 2 === 0) {
+        corners.push(a, b, c)
+      } else {
+        corners.push(b, a, c)
+      }
+    }
+    return corners
+  }
+
+  if (mode === Primitive.Mode.TRIANGLE_FAN) {
+    const corners: number[] = []
+    const first = getIndex(0)
+    for (let index = 1; index < indexCount - 1; index += 1) {
+      corners.push(first, getIndex(index), getIndex(index + 1))
+    }
+    return corners
+  }
+
+  return []
+}
+
 export function clipPrimitive({
   document,
   primitive,
@@ -193,7 +246,7 @@ export function clipPrimitive({
   plane,
   epsilon,
 }: ClipPrimitiveOptions): ClipPrimitiveResult {
-  if (primitive.getMode() !== Primitive.Mode.TRIANGLES) {
+  if (!isTrianglePrimitiveMode(primitive.getMode())) {
     return {
       primitive: primitive.clone(),
       segments: [],
@@ -245,13 +298,22 @@ export function clipPrimitive({
 
   const indices = primitive.getIndices()
   const indexCount = indices?.getCount() ?? positionAccessor.getCount()
-  if (indexCount % 3 !== 0) {
+  if (
+    primitive.getMode() === Primitive.Mode.TRIANGLES &&
+    indexCount % 3 !== 0
+  ) {
     throw new Error(
       "triangle primitive vertex/index count must be divisible by 3",
     )
   }
   const getIndex = (index: number): number =>
     indices ? indices.getScalar(index) : index
+
+  const triangleCorners = listTriangleCornerIndices(
+    primitive.getMode(),
+    indexCount,
+    getIndex,
+  )
 
   const outputAttributes = new Map<string, number[]>()
   for (const semantic of semantics) outputAttributes.set(semantic, [])
@@ -269,11 +331,11 @@ export function clipPrimitive({
     }
   }
 
-  for (let index = 0; index < indexCount; index += 3) {
+  for (let index = 0; index < triangleCorners.length; index += 3) {
     const triangle = [
-      getVertex(getIndex(index)),
-      getVertex(getIndex(index + 1)),
-      getVertex(getIndex(index + 2)),
+      getVertex(triangleCorners[index]!),
+      getVertex(triangleCorners[index + 1]!),
+      getVertex(triangleCorners[index + 2]!),
     ]
     const segment = getTriangleCutSegment(triangle, plane, epsilon)
     if (segment) segments.push(segment)
@@ -303,13 +365,16 @@ export function clipPrimitive({
     return {
       primitive: null,
       segments,
-      sourceTriangles: indexCount / 3,
+      sourceTriangles: triangleCorners.length / 3,
       surfaceTriangles,
       removedTriangles,
     }
   }
 
-  const outputPrimitive = primitive.clone().setIndices(null)
+  const outputPrimitive = primitive
+    .clone()
+    .setIndices(null)
+    .setMode(Primitive.Mode.TRIANGLES!)
   for (const semantic of semantics) outputPrimitive.setAttribute(semantic, null)
   for (const { semantic, accessor } of accessors) {
     const outputAccessor = document
@@ -322,7 +387,7 @@ export function clipPrimitive({
   return {
     primitive: outputPrimitive,
     segments,
-    sourceTriangles: indexCount / 3,
+    sourceTriangles: triangleCorners.length / 3,
     surfaceTriangles,
     removedTriangles,
   }
