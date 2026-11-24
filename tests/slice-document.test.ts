@@ -222,4 +222,21 @@ describe("sliceDocument", () => {
     )
     expect(surface.getAttribute("COLOR_0")?.getNormalized()).toBeFalse()
   })
+
+  test("does not cap when the slice plane coincides with an outer face", async () => {
+    for (const [zOffset, side] of [
+      [1, "z-"],
+      [-1, "z+"],
+    ] as const) {
+      const { stats } = await sliceDocument(createBoxDocument(), {
+        plane: "xy",
+        zOffset,
+        side,
+      })
+      expect(stats.surfaceTriangles).toBe(12)
+      expect(stats.capTriangles).toBe(0)
+      expect(stats.capLoops).toBe(0)
+      expect(stats.outputTriangles).toBe(12)
+    }
+  })
 })

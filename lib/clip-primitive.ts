@@ -138,7 +138,7 @@ function getTriangleCutSegment(
   plane: ResolvedSlicePlane,
   epsilon: number,
 ): CutSegment | null {
-  if (triangle.every((vertex) => Math.abs(vertex.distance) <= epsilon)) {
+  if (!triangle.some((vertex) => vertex.distance < -epsilon)) {
     return null
   }
 
